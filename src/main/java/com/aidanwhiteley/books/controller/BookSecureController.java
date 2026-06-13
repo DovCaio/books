@@ -57,7 +57,7 @@ public class BookSecureController {
     private int maxPageSize;
 
     public BookSecureController(BookRepository bookRepository, GoogleBooksDaoSync googleBooksDaoSync,
-                                GoogleBooksDaoAsync googleBooksDaoAsync, JwtAuthenticationUtils jwtAuthenticationUtils) {
+            GoogleBooksDaoAsync googleBooksDaoAsync, JwtAuthenticationUtils jwtAuthenticationUtils) {
         this.bookRepository = bookRepository;
         this.googleBooksDaoSync = googleBooksDaoSync;
         this.googleBooksDaoAsync = googleBooksDaoAsync;
@@ -88,7 +88,8 @@ public class BookSecureController {
             Book insertedBook = bookRepository.insert(book);
 
             // If there were Google Book details specified, call an async method to
-            // go and get the full details from Google and then update the Mongo document for the book
+            // go and get the full details from Google and then update the Mongo document
+            // for the book
             if (book.getGoogleBookId() != null && !book.getGoogleBookId().isEmpty()) {
                 googleBooksDaoAsync.updateBookWithGoogleBookDetails(insertedBook, book.getGoogleBookId());
             }
@@ -102,7 +103,8 @@ public class BookSecureController {
             return ResponseEntity.created(location).build();
         } else {
             if (LOGGER.isErrorEnabled()) {
-                LOGGER.error("Couldn't create a book as user to own book not found! Principal: {}", logMessageDetaint(principal));
+                LOGGER.error("Couldn't create a book as user to own book not found! Principal: {}",
+                        logMessageDetaint(principal));
             }
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
@@ -123,8 +125,7 @@ public class BookSecureController {
                         (!currentBookState.getGoogleBookId().isEmpty());
 
                 if (inputHasGoogleBookId && (currentBookHasGoogleBookId &&
-                        !currentBookState.getGoogleBookId().equalsIgnoreCase(book.getGoogleBookId()))
-                ) {
+                        !currentBookState.getGoogleBookId().equalsIgnoreCase(book.getGoogleBookId()))) {
                     // Retrieve and update Google Book details synchronously
                     Item item = googleBooksDaoSync.searchGoogleBooksByGoogleBookId(book.getGoogleBookId());
                     currentBookState.setGoogleBookDetails(item);
@@ -165,7 +166,7 @@ public class BookSecureController {
 
     @PostMapping(value = "/books/{id}/comments")
     public Book addCommentToBook(@PathVariable String id, @Valid @RequestBody CommentRec commentRec,
-                                 Principal principal) {
+            Principal principal) {
 
         Optional<User> user = authUtils.extractUserFromPrincipal(principal, false);
         if (user.isPresent()) {
@@ -178,7 +179,7 @@ public class BookSecureController {
 
     @DeleteMapping(value = "/books/{id}/comments/{commentId}")
     public Book removeCommentFromBook(@PathVariable String id, @PathVariable String commentId,
-                                      Principal principal) {
+            Principal principal) {
 
         Optional<User> user = authUtils.extractUserFromPrincipal(principal, false);
 
@@ -206,9 +207,9 @@ public class BookSecureController {
      * has been reviewing books if you are not an authorised user i.e. with at
      * least ROLE_EDITOR
      */
-    @GetMapping(value = {"/books", "/books/"})
+    @GetMapping(value = { "/books", "/books/" })
     public Page<Book> findByReader(@RequestParam String reader, @RequestParam(defaultValue = "0") int page,
-                                   @RequestParam(defaultValue = "5") int size, Principal principal) {
+            @RequestParam(defaultValue = "5") int size, Principal principal) {
 
         if (reader == null || reader.isBlank()) {
             throw new IllegalArgumentException("Reader parameter cannot be empty");
@@ -222,7 +223,7 @@ public class BookSecureController {
         return bookRepository.findByReaderOrderByCreatedDateTimeDesc(pageObj, reader);
     }
 
-    @GetMapping(value = {"/googlebooks", "googlebooks/"}, params = {"title", "author"})
+    @GetMapping(value = { "/googlebooks", "googlebooks/" }, params = { "title", "author" })
     public BookSearchResult findGoogleBooksByTitleAndAuthor(@RequestParam String title, @RequestParam String author) {
         return googleBooksDaoSync.searchGoogleBooksByTitleAndAuthor(title, author);
     }
@@ -240,8 +241,8 @@ public class BookSecureController {
         StringBuilder headersOut = new StringBuilder();
         while (headers.hasMoreElements()) {
             String headerName = headers.nextElement();
-            headersOut.append(HtmlUtils.htmlEscape(headerName)).
-                    append(": ").append(HtmlUtils.htmlEscape(request.getHeader(headerName))).append("\r\n");
+            headersOut.append(HtmlUtils.htmlEscape(headerName)).append(": ")
+                    .append(HtmlUtils.htmlEscape(request.getHeader(headerName))).append("\r\n");
         }
 
         return "Scheme was: " + HtmlUtils.htmlEscape(request.getScheme()) +

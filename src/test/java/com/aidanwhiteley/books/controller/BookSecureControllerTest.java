@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.*;
 
 import java.net.URI;
@@ -36,7 +37,8 @@ class BookSecureControllerTest extends IntegrationTest {
     @Value("${books.users.max.page.size}")
     private int maxPageSize;
 
-    public static ResponseEntity<Book> updateBook(User user, Book book, String updatedTitle, JwtUtils jwtUtilsLocal, TestRestTemplate testRestTemplateLocal) {
+    public static ResponseEntity<Book> updateBook(User user, Book book, String updatedTitle, JwtUtils jwtUtilsLocal,
+            TestRestTemplate testRestTemplateLocal) {
         book.setTitle(updatedTitle);
         String token = jwtUtilsLocal.createTokenForUser(user);
         String xsrfToken = BookTestUtils.getXsrfToken(testRestTemplateLocal);
@@ -83,7 +85,8 @@ class BookSecureControllerTest extends IntegrationTest {
         String xsrfToken = BookTestUtils.getXsrfToken(testRestTemplate);
 
         HttpEntity<Book> request = BookTestUtils.getBookHttpEntity(emptyBook, token, xsrfToken);
-        ResponseEntity<Book> response = testRestTemplate.exchange("/secure/api/books", HttpMethod.POST, request, Book.class);
+        ResponseEntity<Book> response = testRestTemplate.exchange("/secure/api/books", HttpMethod.POST, request,
+                Book.class);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
 
         // Create a valid book and then exceed one of the max field sizes
@@ -182,7 +185,8 @@ class BookSecureControllerTest extends IntegrationTest {
         // Check all works OK when xsrf token is supplied
         Book testBook = BookTestUtils.createTestBook();
         HttpEntity<Book> request = BookTestUtils.getBookHttpEntity(testBook, token, xsrfToken);
-        ResponseEntity<Book> response = testRestTemplate.exchange("/secure/api/books", HttpMethod.POST, request, Book.class);
+        ResponseEntity<Book> response = testRestTemplate.exchange("/secure/api/books", HttpMethod.POST, request,
+                Book.class);
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
 
         // And now check the action is forbidden when no xsrf token is supplied
@@ -214,16 +218,19 @@ class BookSecureControllerTest extends IntegrationTest {
         String token = jwtUtils.createTokenForUser(user);
         String xsrfToken = BookTestUtils.getXsrfToken(testRestTemplate);
         HttpEntity<Comment> postData = BookTestUtils.getBookHttpEntityForComment(newComment, token, xsrfToken);
-        ResponseEntity<Book> postResponse = testRestTemplate.exchange("/secure/api/books/" + bookId + "/comments", HttpMethod.POST, postData,
+        ResponseEntity<Book> postResponse = testRestTemplate.exchange("/secure/api/books/" + bookId + "/comments",
+                HttpMethod.POST, postData,
                 Book.class);
 
         assertEquals(HttpStatus.OK, postResponse.getStatusCode());
         assertEquals(1, postResponse.getBody().getComments().size());
         assertEquals(commentText, postResponse.getBody().getComments().getFirst().getCommentText());
 
-        // Now remove the comment (the reuse of the postData is OK as we just need the headers - not the body)
+        // Now remove the comment (the reuse of the postData is OK as we just need the
+        // headers - not the body)
         String commentId = postResponse.getBody().getComments().getFirst().getId();
-        ResponseEntity<Book> deleteResponse = testRestTemplate.exchange("/secure/api/books/" + bookId + "/comments/" + commentId, HttpMethod.DELETE, postData,
+        ResponseEntity<Book> deleteResponse = testRestTemplate.exchange(
+                "/secure/api/books/" + bookId + "/comments/" + commentId, HttpMethod.DELETE, postData,
                 Book.class);
         assertEquals(HttpStatus.OK, deleteResponse.getStatusCode());
         assertEquals(1, deleteResponse.getBody().getComments().size());
@@ -239,16 +246,20 @@ class BookSecureControllerTest extends IntegrationTest {
         HttpEntity<Book> request = BookTestUtils.getBookHttpEntity(null, token, xsrfToken);
 
         final String testReader = "Fred Bloggs";
-        ResponseEntity<String> response = testRestTemplate.exchange("/secure/api/books?reader=" + testReader, HttpMethod.GET, request, String.class);
+        ResponseEntity<String> response = testRestTemplate.exchange("/secure/api/books?reader=" + testReader,
+                HttpMethod.GET, request, String.class);
         List<Book> books = JsonPath.read(response.getBody(), "$.content");
         assertFalse(books.isEmpty());
 
         final String emptyReader = "";
-        response = testRestTemplate.exchange("/secure/api/books?reader=" + emptyReader, HttpMethod.GET, request, String.class);
+        response = testRestTemplate.exchange("/secure/api/books?reader=" + emptyReader, HttpMethod.GET, request,
+                String.class);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
 
         final int excessivePageSize = maxPageSize + 1000;
-        response = testRestTemplate.exchange("/secure/api/books?reader=" + testReader + "&page=0&size=" + excessivePageSize, HttpMethod.GET, request, String.class);
+        response = testRestTemplate.exchange(
+                "/secure/api/books?reader=" + testReader + "&page=0&size=" + excessivePageSize, HttpMethod.GET, request,
+                String.class);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
@@ -259,7 +270,8 @@ class BookSecureControllerTest extends IntegrationTest {
         String xsrfToken = BookTestUtils.getXsrfToken(testRestTemplate);
         HttpEntity<Book> request = BookTestUtils.getBookHttpEntity(null, token, xsrfToken);
 
-        ResponseEntity<String> response = testRestTemplate.exchange("/secure/api/books/readers", HttpMethod.GET, request, String.class);
+        ResponseEntity<String> response = testRestTemplate.exchange("/secure/api/books/readers", HttpMethod.GET,
+                request, String.class);
         List<String> bookReaders = JsonPath.read(response.getBody(), "$[*].reader");
         assertFalse(bookReaders.isEmpty());
     }
@@ -272,7 +284,8 @@ class BookSecureControllerTest extends IntegrationTest {
         // Re-using "book related" code to get required headers easily set up
         Book testBook = BookTestUtils.createTestBook();
         HttpEntity<Book> request = BookTestUtils.getBookHttpEntity(testBook, token, null);
-        ResponseEntity<String> response = testRestTemplate.exchange("/secure/api/debugheaders", HttpMethod.GET, request, String.class);
+        ResponseEntity<String> response = testRestTemplate.exchange("/secure/api/debugheaders", HttpMethod.GET, request,
+                String.class);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(response.getBody().contains(JwtAuthenticationService.JWT_COOKIE_NAME));
