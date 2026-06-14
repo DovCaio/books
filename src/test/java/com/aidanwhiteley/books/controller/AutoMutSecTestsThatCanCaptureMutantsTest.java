@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -96,7 +97,7 @@ public class AutoMutSecTestsThatCanCaptureMutantsTest {
                 .andDo(print());
     }
 
-    // Mutant ID 6: This test was created because the original test suite did not
+    // Mutant ID 6, 9: This test was created because the original test suite did not
     // capture this
     // ISIR mutation, which replaced the correct ROLE_ADMIN authority with an
     // invalid
@@ -131,6 +132,33 @@ public class AutoMutSecTestsThatCanCaptureMutantsTest {
                 .andExpect(status().isCreated())
                 .andDo(print());
     }
+
+    // Mutant ID 10: This test case detects LNSO (Logical Negation Security
+    // Operator) mutations
+    // because it validates the expected positive authorization outcome for an
+    // authenticated administrator. Any inversion of the security predicate results
+    // in a denial of access, causing a mismatch between the expected HTTP 200
+    // response and the mutated behavior (HTTP 403), thus revealing the security
+    // regression
+
+    @Test
+    void adminCanAccessDebugHeaders() throws Exception {
+
+        String token = jwtUtils.createTokenForUser(getTestUserAdmin());
+
+        Cookie cookie = new Cookie(
+                JwtAuthenticationService.JWT_COOKIE_NAME,
+                token);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/secure/api/debugheaders")
+                .cookie(cookie)
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("headers:")))
+                .andDo(print());
+    }
+
+    //
 
     public static User getTestUserUser() {
         User user = new User();
