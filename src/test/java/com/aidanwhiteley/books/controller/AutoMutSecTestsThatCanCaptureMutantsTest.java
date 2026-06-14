@@ -158,7 +158,35 @@ public class AutoMutSecTestsThatCanCaptureMutantsTest {
                 .andDo(print());
     }
 
+    // Mutant ID 11: This test was created because the original test suite did not
+    // capture this PARO mutation, which replaced the authorization rule with
+    // permitAll(), effectively allowing any authenticated (or even unauthenticated)
+    // user to access the endpoint.
     //
+    // This test verifies that a user with the ROLE_EDITOR is correctly denied
+    // access
+    // to the endpoint protected by @PreAuthorize("hasRole('ROLE_ADMIN')").
+    //
+    // If the security constraint is weakened (e.g., replaced by permitAll), the
+    // test
+    // would incorrectly succeed, revealing a security regression by expecting
+    // HTTP 403 Forbidden for non-admin users.
+
+    @Test
+    void editorCantAccessDebugHeaders() throws Exception {
+
+        String token = jwtUtils.createTokenForUser(getTestUserEditor());
+
+        Cookie cookie = new Cookie(
+                JwtAuthenticationService.JWT_COOKIE_NAME,
+                token);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/secure/api/debugheaders")
+                .cookie(cookie)
+                .with(csrf()))
+                .andExpect(status().isForbidden())
+                .andDo(print());
+    }
 
     public static User getTestUserUser() {
         User user = new User();
