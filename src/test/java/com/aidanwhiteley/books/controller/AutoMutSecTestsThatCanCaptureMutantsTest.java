@@ -96,6 +96,42 @@ public class AutoMutSecTestsThatCanCaptureMutantsTest {
                 .andDo(print());
     }
 
+    // Mutant ID 6: This test was created because the original test suite did not
+    // capture this
+    // ISIR mutation, which replaced the correct ROLE_ADMIN authority with an
+    // invalid
+    // role (NO_ROLE_ADMIN) in the authorization rule. This test verifies that a
+    // properly authenticated admin user is still able to access the endpoint,
+    // ensuring that breaking or altering the required administrative role is
+    // detected
+    // as a security regression.
+
+    @Test
+    void adminCanCreateABook() throws Exception {
+
+        String token = jwtUtils.createTokenForUser(getTestUserAdmin());
+
+        Cookie cookie = new Cookie(
+                JwtAuthenticationService.JWT_COOKIE_NAME,
+                token);
+
+        Book book = Book.builder()
+                .title("Test Book")
+                .author("Test Author")
+                .genre("Fantasy")
+                .summary("Test summary")
+                .rating(Book.Rating.GOOD)
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/secure/api/books")
+                .cookie(cookie)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(book)))
+                .andExpect(status().isCreated())
+                .andDo(print());
+    }
+
     public static User getTestUserUser() {
         User user = new User();
         user.setFullName(USER_WITH_ALL_ROLES_FULL_NAME);
@@ -106,6 +142,34 @@ public class AutoMutSecTestsThatCanCaptureMutantsTest {
 
         user.setAuthenticationServiceId(USER_WITH_ALL_ROLES);
         user.addRole(User.Role.ROLE_USER);
+
+        return user;
+    }
+
+    public static User getTestUserAdmin() {
+        User user = new User();
+        user.setFullName(USER_WITH_ALL_ROLES_FULL_NAME);
+        user.setAuthProvider(PROVIDER_ALL_ROLES_USER);
+        user.setFirstLogon(LocalDateTime.now());
+        user.setLastLogon(LocalDateTime.now());
+        user.setEmail(DUMMY_EMAIL);
+
+        user.setAuthenticationServiceId(USER_WITH_ALL_ROLES);
+        user.addRole(User.Role.ROLE_ADMIN);
+
+        return user;
+    }
+
+    public static User getTestUserEditor() {
+        User user = new User();
+        user.setFullName(USER_WITH_ALL_ROLES_FULL_NAME);
+        user.setAuthProvider(PROVIDER_ALL_ROLES_USER);
+        user.setFirstLogon(LocalDateTime.now());
+        user.setLastLogon(LocalDateTime.now());
+        user.setEmail(DUMMY_EMAIL);
+
+        user.setAuthenticationServiceId(USER_WITH_ALL_ROLES);
+        user.addRole(User.Role.ROLE_EDITOR);
 
         return user;
     }
